@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: query_demo
+      POSTGRES_USER: query_user
+      POSTGRES_PASSWORD: query_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/001_seed.sql:/docker-entrypoint-initdb.d/001_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U query_user -d query_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://query_user:query_password@db:5432/query_demo
+      QUERY_TIMEOUT_MS: 5000
+      MAX_RESULT_ROWS: 200
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4.1-mini}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
