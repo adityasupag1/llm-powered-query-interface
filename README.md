@@ -4,6 +4,14 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-PostgreSQL-informational)
 
+## Live demo
+
+- **Interactive API docs:** https://llm-powered-query-interface-pmmi.onrender.com/docs
+- **Health check:** https://llm-powered-query-interface-pmmi.onrender.com/health
+- **Live schema:** https://llm-powered-query-interface-pmmi.onrender.com/schema
+
+> The free Render instance may take up to about 50 seconds to wake after inactivity.
+
 
 A production-style FastAPI service that translates natural-language questions into **read-only PostgreSQL queries**, validates the generated SQL against the live database schema, executes it with safety limits, and returns structured JSON results.
 
