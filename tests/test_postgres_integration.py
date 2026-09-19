@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
+from app.core.errors import QueryExecutionError
 from app.db.postgres import PostgresDatabase
 from app.main import create_app
 
@@ -70,7 +71,7 @@ def test_database_transaction_rejects_mutation() -> None:
         max_rows=50,
     )
 
-    with pytest.raises(Exception, match="read-only|read only|PostgreSQL rejected"):
+    with pytest.raises(QueryExecutionError, match="read-only|read only|PostgreSQL rejected"):
         database.execute_readonly(
             "UPDATE products SET stock_quantity = 0 WHERE id = 1 RETURNING id"
         )
