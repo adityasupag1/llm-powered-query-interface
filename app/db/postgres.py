@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
@@ -9,6 +10,9 @@ from psycopg.rows import dict_row
 
 from app.core.errors import DatabaseUnavailableError, QueryExecutionError
 from app.db.schema import ColumnInfo, DatabaseSchema, TableInfo
+
+
+logger = logging.getLogger(__name__)
 
 
 class PostgresDatabase:
@@ -23,6 +27,7 @@ class PostgresDatabase:
             with psycopg.connect(self.database_url, row_factory=dict_row) as connection:
                 yield connection
         except psycopg.OperationalError as exc:
+            logger.error("PostgreSQL connection failed: %s", exc)
             raise DatabaseUnavailableError("PostgreSQL is unavailable") from exc
 
     def healthcheck(self) -> bool:
@@ -61,7 +66,10 @@ class PostgresDatabase:
                 with connection.transaction():
                     with connection.cursor() as cursor:
                         cursor.execute("SET TRANSACTION READ ONLY")
-                        cursor.execute("SELECT set_config('statement_timeout', %s, true)", (str(self.timeout_ms),))
+                        cursor.execute(
+                            "SELECT set_config('statement_timeout', %s, true)",
+                            (str(self.timeout_ms),),
+                        )
                         cursor.execute(sql)
                         rows = cursor.fetchmany(self.max_rows + 1)
                         if len(rows) > self.max_rows:
@@ -76,4 +84,6 @@ class PostgresDatabase:
                 f"Query exceeded the {self.timeout_ms} ms execution timeout"
             ) from exc
         except psycopg.Error as exc:
-            raise QueryExecutionError(f"PostgreSQL rejected the query: {exc.diag.message_primary}") from exc
+            raise QueryExecutionError(
+                f"PostgreSQL rejected the query: {exc.diag.message_primary}"
+            ) from exc
